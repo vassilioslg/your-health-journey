@@ -11,7 +11,7 @@ import SymptomLogger from "@/components/app/SymptomLogger";
 import OnboardingFlow from "@/components/app/OnboardingFlow";
 import { useUserProfile } from "@/components/app/UserProfileContext";
 
-type Tab = "medications" | "interactions" | "nudges" | "side-effects";
+type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "side-effects";
 
 const tabs = [
   { id: "medications" as Tab, label: "My Medications", icon: Pill },
