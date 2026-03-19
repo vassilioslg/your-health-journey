@@ -46,6 +46,7 @@ const AppDashboard = () => {
         <div className="container max-w-2xl py-6">
           {activeTab === "medications" && <MedicationList />}
           {activeTab === "interactions" && <InteractionChecker />}
+          {activeTab === "symptom-log" && <SymptomLogger />}
           {activeTab === "nudges" && <SafetyNudges />}
           {activeTab === "side-effects" && <SideEffectsGuide />}
         </div>
