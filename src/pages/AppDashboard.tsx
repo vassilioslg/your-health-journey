@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/harmonimed-logo.png";
-import { Pill, AlertTriangle, Bell, BookOpen, Plus, Search, ArrowLeft, X, User } from "lucide-react";
+import { Pill, AlertTriangle, Bell, BookOpen, Plus, Search, ArrowLeft, X, User, MessageCircle } from "lucide-react";
 import MedicationList from "@/components/app/MedicationList";
 import InteractionChecker from "@/components/app/InteractionChecker";
 import SafetyNudges from "@/components/app/SafetyNudges";
