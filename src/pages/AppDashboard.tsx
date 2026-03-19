@@ -27,8 +27,8 @@ const AppDashboard = () => {
         <div className="container flex h-14 items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-            <img src={logo} alt="HarmoniMed" className="h-7 w-7" />
-            <span className="text-lg font-bold">HarmoniMed</span>
+            <img src={logo} alt="HarmoniMed" className="h-9 w-9" />
+            <span className="text-xl font-bold">HarmoniMed</span>
           </Link>
         </div>
       </header>
