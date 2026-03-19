@@ -20,8 +20,12 @@ const tabs = [
 ];
 
 const AppDashboard = () => {
+  const { profile } = useUserProfile();
   const [activeTab, setActiveTab] = useState<Tab>("medications");
 
+  if (!profile.onboardingComplete) {
+    return <OnboardingFlow />;
+  }
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* App Header */}
