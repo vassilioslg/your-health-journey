@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/harmonimed-logo.png";
-import { Pill, AlertTriangle, Bell, BookOpen, Plus, Search, ArrowLeft, X } from "lucide-react";
+import { Pill, AlertTriangle, Bell, BookOpen, Plus, Search, ArrowLeft, X, User } from "lucide-react";
 import MedicationList from "@/components/app/MedicationList";
 import InteractionChecker from "@/components/app/InteractionChecker";
 import SafetyNudges from "@/components/app/SafetyNudges";
 import SideEffectsGuide from "@/components/app/SideEffectsGuide";
+import OnboardingFlow from "@/components/app/OnboardingFlow";
+import { useUserProfile } from "@/components/app/UserProfileContext";
 
 type Tab = "medications" | "interactions" | "nudges" | "side-effects";
 
@@ -18,8 +20,12 @@ const tabs = [
 ];
 
 const AppDashboard = () => {
+  const { profile } = useUserProfile();
   const [activeTab, setActiveTab] = useState<Tab>("medications");
 
+  if (!profile.onboardingComplete) {
+    return <OnboardingFlow />;
+  }
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* App Header */}
@@ -27,8 +33,8 @@ const AppDashboard = () => {
         <div className="container flex h-14 items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4 text-muted-foreground" />
-            <img src={logo} alt="HarmoniMed" className="h-7 w-7" />
-            <span className="text-lg font-bold">HarmoniMed</span>
+            <img src={logo} alt="HarmoniMed" className="h-9 w-9" />
+            <span className="text-xl font-bold">HarmoniMed</span>
           </Link>
         </div>
       </header>

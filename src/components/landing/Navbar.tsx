@@ -7,8 +7,8 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <img src={logo} alt="HarmoniMed" className="h-9 w-9" />
-          <span className="text-xl font-extrabold tracking-tight">HarmoniMed</span>
+          <img src={logo} alt="HarmoniMed" className="h-11 w-11" />
+          <span className="text-2xl font-extrabold tracking-tight">HarmoniMed</span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
