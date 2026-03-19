@@ -14,10 +14,11 @@ import { useUserProfile } from "@/components/app/UserProfileContext";
 type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "side-effects";
 
 const tabs = [
-  { id: "medications" as Tab, label: "My Medications", icon: Pill },
+  { id: "medications" as Tab, label: "Meds", icon: Pill },
   { id: "interactions" as Tab, label: "Interactions", icon: AlertTriangle },
-  { id: "nudges" as Tab, label: "Safety Nudges", icon: Bell },
-  { id: "side-effects" as Tab, label: "Side Effects", icon: BookOpen },
+  { id: "symptom-log" as Tab, label: "Log", icon: MessageCircle },
+  { id: "nudges" as Tab, label: "Nudges", icon: Bell },
+  { id: "side-effects" as Tab, label: "Effects", icon: BookOpen },
 ];
 
 const AppDashboard = () => {
