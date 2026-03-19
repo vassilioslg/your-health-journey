@@ -7,6 +7,7 @@ import MedicationList from "@/components/app/MedicationList";
 import InteractionChecker from "@/components/app/InteractionChecker";
 import SafetyNudges from "@/components/app/SafetyNudges";
 import SideEffectsGuide from "@/components/app/SideEffectsGuide";
+import SymptomLogger from "@/components/app/SymptomLogger";
 import OnboardingFlow from "@/components/app/OnboardingFlow";
 import { useUserProfile } from "@/components/app/UserProfileContext";
 
