@@ -2,21 +2,23 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/harmonimed-logo.png";
-import { Pill, AlertTriangle, Bell, BookOpen, Plus, Search, ArrowLeft, X, User } from "lucide-react";
+import { Pill, AlertTriangle, Bell, BookOpen, Plus, Search, ArrowLeft, X, User, MessageCircle } from "lucide-react";
 import MedicationList from "@/components/app/MedicationList";
 import InteractionChecker from "@/components/app/InteractionChecker";
 import SafetyNudges from "@/components/app/SafetyNudges";
 import SideEffectsGuide from "@/components/app/SideEffectsGuide";
+import SymptomLogger from "@/components/app/SymptomLogger";
 import OnboardingFlow from "@/components/app/OnboardingFlow";
 import { useUserProfile } from "@/components/app/UserProfileContext";
 
-type Tab = "medications" | "interactions" | "nudges" | "side-effects";
+type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "side-effects";
 
 const tabs = [
-  { id: "medications" as Tab, label: "My Medications", icon: Pill },
+  { id: "medications" as Tab, label: "Meds", icon: Pill },
   { id: "interactions" as Tab, label: "Interactions", icon: AlertTriangle },
-  { id: "nudges" as Tab, label: "Safety Nudges", icon: Bell },
-  { id: "side-effects" as Tab, label: "Side Effects", icon: BookOpen },
+  { id: "symptom-log" as Tab, label: "Log", icon: MessageCircle },
+  { id: "nudges" as Tab, label: "Nudges", icon: Bell },
+  { id: "side-effects" as Tab, label: "Effects", icon: BookOpen },
 ];
 
 const AppDashboard = () => {
@@ -44,6 +46,7 @@ const AppDashboard = () => {
         <div className="container max-w-2xl py-6">
           {activeTab === "medications" && <MedicationList />}
           {activeTab === "interactions" && <InteractionChecker />}
+          {activeTab === "symptom-log" && <SymptomLogger />}
           {activeTab === "nudges" && <SafetyNudges />}
           {activeTab === "side-effects" && <SideEffectsGuide />}
         </div>
