@@ -9,14 +9,14 @@ import SafetyNudges from "@/components/app/SafetyNudges";
 import SideEffectsGuide from "@/components/app/SideEffectsGuide";
 import SymptomLogger from "@/components/app/SymptomLogger";
 import OnboardingFlow from "@/components/app/OnboardingFlow";
-import MedicationReminders from "@/components/app/MedicationReminders";
+
 import HealthReports from "@/components/app/HealthReports";
 import AIHealthChat from "@/components/app/AIHealthChat";
 import UpgradeModal from "@/components/app/UpgradeModal";
 import { useUserProfile } from "@/components/app/UserProfileContext";
 import { usePremium } from "@/components/app/PremiumContext";
 
-type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "side-effects" | "reminders" | "reports" | "ai-chat";
+type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "side-effects" | "reports" | "ai-chat";
 
 const tabs: { id: Tab; label: string; icon: typeof Pill; premium?: boolean }[] = [
   { id: "medications", label: "Meds", icon: Pill },
@@ -24,7 +24,6 @@ const tabs: { id: Tab; label: string; icon: typeof Pill; premium?: boolean }[] =
   { id: "symptom-log", label: "Log", icon: MessageCircle },
   { id: "nudges", label: "Nudges", icon: Bell },
   { id: "side-effects", label: "Effects", icon: BookOpen },
-  { id: "reminders", label: "Reminders", icon: Bell, premium: true },
   { id: "reports", label: "Reports", icon: FileText, premium: true },
   { id: "ai-chat", label: "AI Chat", icon: Bot, premium: true },
 ];
@@ -77,7 +76,7 @@ const AppDashboard = () => {
           {activeTab === "symptom-log" && <SymptomLogger />}
           {activeTab === "nudges" && <SafetyNudges />}
           {activeTab === "side-effects" && <SideEffectsGuide />}
-          {activeTab === "reminders" && <MedicationReminders />}
+          
           {activeTab === "reports" && <HealthReports />}
           {activeTab === "ai-chat" && <AIHealthChat />}
         </div>
