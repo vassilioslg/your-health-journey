@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pill, X, Clock, Droplets } from "lucide-react";
+import { Plus, Pill, X, Clock, Droplets, ChevronRight } from "lucide-react";
 import { MEDICINES_LIST } from "@/data/medicines";
+import MedicationDetail from "@/components/app/MedicationDetail";
 
 interface Medication {
   id: string;
@@ -19,6 +20,7 @@ const sampleMeds: Medication[] = [
 
 const MedicationList = () => {
   const [medications, setMedications] = useState<Medication[]>(sampleMeds);
+  const [selectedMed, setSelectedMed] = useState<Medication | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [newMed, setNewMed] = useState({ name: "", dose: "", frequency: "Once daily" });
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -192,7 +194,8 @@ const MedicationList = () => {
         {medications.map((med) => (
           <div
             key={med.id}
-            className="group flex items-center gap-4 rounded-2xl border bg-card p-4 shadow-sm transition-all hover:shadow-md"
+            onClick={() => setSelectedMed(med)}
+            className="group flex cursor-pointer items-center gap-4 rounded-2xl border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/30"
           >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
               <Pill className="h-6 w-6 text-primary" />
@@ -208,15 +211,24 @@ const MedicationList = () => {
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => removeMedication(med.id)}
-              className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); removeMedication(med.id); }}
+                className="opacity-0 transition-opacity group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
           </div>
         ))}
       </div>
+
+      <MedicationDetail
+        open={!!selectedMed}
+        onOpenChange={(open) => { if (!open) setSelectedMed(null); }}
+        medication={selectedMed}
+      />
     </div>
   );
 };
