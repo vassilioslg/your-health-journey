@@ -9,7 +9,7 @@ import SafetyNudges from "@/components/app/SafetyNudges";
 import SideEffectsGuide from "@/components/app/SideEffectsGuide";
 import SymptomLogger from "@/components/app/SymptomLogger";
 import OnboardingFlow from "@/components/app/OnboardingFlow";
-import MedicationReminders from "@/components/app/MedicationReminders";
+
 import HealthReports from "@/components/app/HealthReports";
 import AIHealthChat from "@/components/app/AIHealthChat";
 import UpgradeModal from "@/components/app/UpgradeModal";
