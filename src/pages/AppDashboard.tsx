@@ -76,7 +76,7 @@ const AppDashboard = () => {
           {activeTab === "symptom-log" && <SymptomLogger />}
           {activeTab === "nudges" && <SafetyNudges />}
           {activeTab === "side-effects" && <SideEffectsGuide />}
-          {activeTab === "reminders" && <MedicationReminders />}
+          
           {activeTab === "reports" && <HealthReports />}
           {activeTab === "ai-chat" && <AIHealthChat />}
         </div>
