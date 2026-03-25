@@ -36,6 +36,7 @@ interface UserProfileContextType {
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
   completeOnboarding: () => void;
+  startOnboarding: () => void;
   resetProfile: () => void;
 }
 
@@ -59,13 +60,17 @@ export const UserProfileProvider = ({ children }: { children: ReactNode }) => {
     updateProfile({ onboardingComplete: true });
   };
 
+  const startOnboarding = () => {
+    updateProfile({ onboardingComplete: false });
+  };
+
   const resetProfile = () => {
     localStorage.removeItem("harmonimed-profile");
     setProfile(defaultProfile);
   };
 
   return (
-    <UserProfileContext.Provider value={{ profile, updateProfile, completeOnboarding, resetProfile }}>
+    <UserProfileContext.Provider value={{ profile, updateProfile, completeOnboarding, startOnboarding, resetProfile }}>
       {children}
     </UserProfileContext.Provider>
   );

@@ -134,17 +134,10 @@ const OnboardingFlow = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between px-5 pt-6 pb-2">
-        <div className="flex items-center gap-2">
-          <img src={logo} alt="HarmoniMed" className="h-8 w-8" />
-          <span className="text-lg font-bold">Setup</span>
+      <header className="flex items-center px-5 pt-6 pb-2">
+        <div className="flex items-center">
+          <img src={logo} alt="HarmoniMed" className="h-14 w-14 object-contain" />
         </div>
-        <button
-          onClick={completeOnboarding}
-          className="text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          Skip
-        </button>
       </header>
 
       {/* Progress bar */}

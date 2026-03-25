@@ -6,6 +6,7 @@ import { lookupMedicineByBarcode } from "@/data/medicineBarcodes";
 import MedicationDetail from "@/components/app/MedicationDetail";
 import PremiumGate from "./PremiumGate";
 import { usePremium } from "./PremiumContext";
+import { loadStoredMedications, saveStoredMedications } from "@/lib/medicationsStorage";
 
 interface Medication {
   id: string;
@@ -47,7 +48,10 @@ type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => BarcodeDete
 
 const MedicationList = () => {
   const { isPremium } = usePremium();
-  const [medications, setMedications] = useState<Medication[]>(sampleMeds);
+  const [medications, setMedications] = useState<Medication[]>(() => {
+    const stored = loadStoredMedications();
+    return stored.length > 0 ? stored : sampleMeds;
+  });
   const [reminders, setReminders] = useState<Reminder[]>(sampleReminders);
   const [selectedMed, setSelectedMed] = useState<Medication | null>(null);
   const [showAdd, setShowAdd] = useState(false);
@@ -121,6 +125,10 @@ const MedicationList = () => {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  useEffect(() => {
+    saveStoredMedications(medications);
+  }, [medications]);
 
   const stopScanner = useCallback(() => {
     if (scanFrameRef.current !== null) {

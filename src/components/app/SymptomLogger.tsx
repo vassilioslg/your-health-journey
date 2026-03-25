@@ -4,14 +4,30 @@ import {
   MessageCircle, AlertTriangle, CheckCircle2, Info, Clock,
   Send, Pill, Activity, X, ChevronDown, ChevronUp, Lightbulb, Brain
 } from "lucide-react";
+import { useUserProfile } from "./UserProfileContext";
+import { getStoredMedicationNames } from "@/lib/medicationsStorage";
 
-// Comprehensive symptom database with medication links
-const symptomDatabase: Record<string, {
+type SideEffectEntry = {
   medications: string[];
   severity: "high" | "moderate" | "low";
   explanation: string;
   advice: string;
-}[]> = {
+};
+
+type InteractionAlertEntry = {
+  symptom: string;
+  drugs: string[];
+  alert: string;
+  severity: "high" | "moderate";
+};
+
+type ScoredSideEffectEntry = SideEffectEntry & {
+  matchedUserMeds: string[];
+  relevanceScore: number;
+};
+
+// Comprehensive symptom database with medication links
+const symptomDatabase: Record<string, SideEffectEntry[]> = {
   "dizzy": [
     { medications: ["Lisinopril", "Losartan", "Amlodipine"], severity: "moderate", explanation: "Dizziness is common with blood pressure medications, especially when standing up quickly (orthostatic hypotension).", advice: "Rise slowly from sitting/lying positions. If persistent or severe, contact your doctor." },
     { medications: ["Atorvastatin", "Rosuvastatin", "Simvastatin"], severity: "low", explanation: "Less common side effect of statins.", advice: "Usually mild and temporary. Monitor and report if it worsens." },
@@ -223,12 +239,7 @@ const symptomDatabase: Record<string, {
 };
 
 // Interaction risks
-const interactionAlerts: {
-  symptom: string;
-  drugs: string[];
-  alert: string;
-  severity: "high" | "moderate";
-}[] = [
+const interactionAlerts: InteractionAlertEntry[] = [
   { symptom: "dizzy", drugs: ["Metformin", "Lisinopril"], alert: "Dizziness while taking Metformin + Lisinopril together could indicate hypoglycemia — Lisinopril can enhance Metformin's blood sugar-lowering effect.", severity: "high" },
   { symptom: "dizziness", drugs: ["Metformin", "Lisinopril"], alert: "Dizziness while taking Metformin + Lisinopril together could indicate hypoglycemia — Lisinopril can enhance Metformin's blood sugar-lowering effect.", severity: "high" },
   { symptom: "muscle pain", drugs: ["Atorvastatin"], alert: "Muscle pain with statins requires attention. If you're also consuming grapefruit, it can significantly increase Atorvastatin levels and worsen muscle side effects.", severity: "high" },
@@ -344,8 +355,9 @@ interface LogEntry {
   id: string;
   symptom: string;
   timestamp: Date;
-  matches: typeof symptomDatabase[string];
-  interactionAlerts: typeof interactionAlerts;
+  matches: ScoredSideEffectEntry[];
+  interactionAlerts: InteractionAlertEntry[];
+  contextSummary: string;
   intelligentInsight?: {
     reasoning: string;
     relatedMedCategories: { category: string; meds: string[]; explanation: string }[];
@@ -613,16 +625,66 @@ const phraseMatchesInput = (inputTokens: string[], phrase: string) => {
   );
 };
 
+const medicationNoiseWords = new Set([
+  "tablet", "tablets", "capsule", "capsules", "inhaler", "solution", "syrup", "cream",
+  "ointment", "injection", "patch", "mg", "mcg", "g", "ml", "xr", "sr", "er",
+]);
+
+const medicationTokens = (name: string) =>
+  normalizeText(name)
+    .split(" ")
+    .filter(Boolean)
+    .filter((token) => !medicationNoiseWords.has(token))
+    .filter((token) => !/^\d+(\.\d+)?$/.test(token));
+
+const medicationNamesMatch = (a: string, b: string) => {
+  const aTokens = medicationTokens(a);
+  const bTokens = medicationTokens(b);
+  if (!aTokens.length || !bTokens.length) return false;
+
+  const aNorm = aTokens.join(" ");
+  const bNorm = bTokens.join(" ");
+  if (aNorm === bNorm) return true;
+
+  if (
+    (aNorm.includes(bNorm) || bNorm.includes(aNorm)) &&
+    Math.min(aNorm.length, bNorm.length) >= 5
+  ) {
+    return true;
+  }
+
+  return aTokens.some((aToken) =>
+    bTokens.some((bToken) => isApproxTokenMatch(aToken, bToken)),
+  );
+};
+
+const getMatchedUserMeds = (effectMeds: string[], userMeds: string[]) => {
+  const matched = new Set<string>();
+  userMeds.forEach((userMed) => {
+    if (effectMeds.some((effectMed) => medicationNamesMatch(userMed, effectMed))) {
+      matched.add(userMed);
+    }
+  });
+  return Array.from(matched);
+};
+
 const SymptomLogger = () => {
+  const { profile } = useUserProfile();
   const [input, setInput] = useState("");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
+  const hasMedicationList = getStoredMedicationNames().length > 0;
 
   const analyzeSymptom = () => {
     const rawInput = input.trim();
     if (!rawInput || rawInput.length > 200) return;
     const normalizedInput = normalizeText(rawInput);
     const inputTokens = tokenize(rawInput);
+    const currentMedicationNames = getStoredMedicationNames();
+    const hasMedicationContext = currentMedicationNames.length > 0;
+
+    const severityOrder = { high: 0, moderate: 1, low: 2 };
+    const severityWeight = { high: 3, moderate: 2, low: 1 };
 
     // Find core symptom keywords from direct matches, natural phrasing, and typo-tolerant matching.
     const matchedKeywords = new Set<string>();
@@ -643,26 +705,65 @@ const SymptomLogger = () => {
       }
     });
 
-    // Find matching side effects
-    const matches: typeof symptomDatabase[string] = [];
-    const matchedInteractions: typeof interactionAlerts = [];
-
+    // Find matching side effects and score relevance against the user's active meds.
+    const candidateMatches: ScoredSideEffectEntry[] = [];
     matchedKeywords.forEach((keyword) => {
       const effects = symptomDatabase[keyword];
       if (!effects) return;
       effects.forEach((effect) => {
-        if (!matches.some((m) => m.medications.join() === effect.medications.join() && m.explanation === effect.explanation)) {
-          matches.push(effect);
+        const matchedUserMeds = getMatchedUserMeds(effect.medications, currentMedicationNames);
+        const relevanceScore = matchedUserMeds.length * 10 + severityWeight[effect.severity];
+        const enrichedEffect: ScoredSideEffectEntry = {
+          ...effect,
+          matchedUserMeds,
+          relevanceScore,
+        };
+        const alreadyExists = candidateMatches.some(
+          (match) =>
+            match.explanation === enrichedEffect.explanation &&
+            match.advice === enrichedEffect.advice &&
+            match.medications.join("|") === enrichedEffect.medications.join("|"),
+        );
+        if (!alreadyExists) {
+          candidateMatches.push(enrichedEffect);
         }
       });
     });
 
+    let matches: ScoredSideEffectEntry[] = [];
+    if (hasMedicationContext) {
+      const directMedicationMatches = candidateMatches.filter(
+        (match) => match.matchedUserMeds.length > 0,
+      );
+      const source = directMedicationMatches.length > 0 ? directMedicationMatches : candidateMatches;
+      matches = source
+        .sort(
+          (a, b) =>
+            b.relevanceScore - a.relevanceScore ||
+            severityOrder[a.severity] - severityOrder[b.severity],
+        )
+        .slice(0, 6);
+    } else {
+      matches = candidateMatches
+        .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
+        .slice(0, 6);
+    }
+
+    // Filter interaction alerts so they only show when the user's active meds support the combo.
+    const matchedInteractions: InteractionAlertEntry[] = [];
     interactionAlerts.forEach((ia) => {
       if (
         matchedKeywords.has(ia.symptom) ||
         containsTerm(normalizedInput, normalizeText(ia.symptom)) ||
         phraseMatchesInput(inputTokens, ia.symptom)
       ) {
+        const hasInteractionContext =
+          !hasMedicationContext ||
+          ia.drugs.every((drug) =>
+            currentMedicationNames.some((userDrug) => medicationNamesMatch(userDrug, drug)),
+          );
+        if (!hasInteractionContext) return;
+
         const alreadyAdded = matchedInteractions.some(
           (match) =>
             match.alert === ia.alert &&
@@ -675,10 +776,6 @@ const SymptomLogger = () => {
       }
     });
 
-    // Sort by severity
-    const severityOrder = { high: 0, moderate: 1, low: 2 };
-    matches.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
-
     // Intelligent reasoning for unrecognized/partial symptoms
     let intelligentInsight: LogEntry["intelligentInsight"] = undefined;
     if (matches.length === 0) {
@@ -688,10 +785,27 @@ const SymptomLogger = () => {
             (kw) => containsTerm(normalizedInput, normalizeText(kw)) || phraseMatchesInput(inputTokens, kw),
           )
         ) {
+          const relatedMedCategories = hasMedicationContext
+            ? reasoning.relatedMedCategories
+                .map((category) => {
+                  const matchedMeds = category.meds.filter((med) =>
+                    currentMedicationNames.some((userMed) => medicationNamesMatch(userMed, med)),
+                  );
+                  return { ...category, meds: matchedMeds };
+                })
+                .filter((category) => category.meds.length > 0)
+            : reasoning.relatedMedCategories;
+
           intelligentInsight = {
-            reasoning: reasoning.reasoning,
-            relatedMedCategories: reasoning.relatedMedCategories,
-            generalAdvice: reasoning.generalAdvice,
+            reasoning:
+              hasMedicationContext && relatedMedCategories.length === 0
+                ? `${reasoning.reasoning} We did not find a strong overlap with your current medication list, so this may be caused by a non-medication factor.`
+                : reasoning.reasoning,
+            relatedMedCategories,
+            generalAdvice:
+              hasMedicationContext && relatedMedCategories.length === 0
+                ? `${reasoning.generalAdvice} If this keeps happening, discuss it with your clinician as it may relate to condition changes rather than medicine side effects.`
+                : reasoning.generalAdvice,
           };
           break;
         }
@@ -705,9 +819,25 @@ const SymptomLogger = () => {
             { category: "Drug interactions", meds: [], explanation: "Combinations of medications can produce symptoms that neither drug would cause alone." },
             { category: "Timing & lifestyle factors", meds: [], explanation: "Symptoms may relate to when you take medications, food interactions, hydration levels, or sleep patterns." },
           ],
-          generalAdvice: "Keep a note of when this symptom occurs (time of day, relation to doses, food intake). Share this log with your doctor or pharmacist — they can determine if it's medication-related.",
+          generalAdvice: hasMedicationContext
+            ? "Keep a note of when this symptom occurs (time of day, relation to doses, food intake). Share this log with your doctor or pharmacist — they can determine if it's medication-related."
+            : "Keep a note of when this symptom occurs and add your medications in the Meds tab for more personalized symptom matching next time.",
         };
       }
+    }
+
+    const contextPieces: string[] = [];
+    if (hasMedicationContext) {
+      const medsPreview = currentMedicationNames.slice(0, 3).join(", ");
+      const overflow = currentMedicationNames.length > 3 ? ` +${currentMedicationNames.length - 3} more` : "";
+      contextPieces.push(`Using your meds: ${medsPreview}${overflow}`);
+    } else {
+      contextPieces.push("No medication list found yet");
+    }
+    if (profile.conditions.length > 0) {
+      const conditionPreview = profile.conditions.slice(0, 2).join(", ");
+      const overflow = profile.conditions.length > 2 ? ` +${profile.conditions.length - 2} more` : "";
+      contextPieces.push(`Profile conditions: ${conditionPreview}${overflow}`);
     }
 
     const entry: LogEntry = {
@@ -716,10 +846,11 @@ const SymptomLogger = () => {
       timestamp: new Date(),
       matches,
       interactionAlerts: matchedInteractions,
+      contextSummary: contextPieces.join(" • "),
       intelligentInsight,
     };
 
-    setLogs([entry, ...logs]);
+    setLogs((prev) => [entry, ...prev]);
     setExpandedLog(entry.id);
     setInput("");
   };
@@ -745,6 +876,11 @@ const SymptomLogger = () => {
         <p className="text-sm text-muted-foreground">
           Log how you're feeling — we'll analyze it against your medications
         </p>
+        {!hasMedicationList && (
+          <p className="mt-1 text-xs text-warning">
+            Add your medicines in the Meds tab to get context-specific symptom matches.
+          </p>
+        )}
       </div>
 
       {/* Input area */}
@@ -870,6 +1006,10 @@ const SymptomLogger = () => {
                 {/* Expanded details */}
                 {isExpanded && (
                   <div className="border-t px-4 pb-4 pt-3 animate-fade-in">
+                    <div className="mb-3 rounded-xl border bg-muted/25 p-2.5">
+                      <p className="text-[11px] font-medium text-muted-foreground">{log.contextSummary}</p>
+                    </div>
+
                     {/* Interaction alerts first */}
                     {log.interactionAlerts.length > 0 && (
                       <div className="mb-4">
@@ -913,6 +1053,15 @@ const SymptomLogger = () => {
                                     {config.label}
                                   </span>
                                 </div>
+                                {match.matchedUserMeds.length > 0 ? (
+                                  <p className="mb-1.5 text-[11px] font-semibold text-primary">
+                                    Matched your meds: {match.matchedUserMeds.join(", ")}
+                                  </p>
+                                ) : (
+                                  <p className="mb-1.5 text-[11px] text-muted-foreground">
+                                    General possibility (not directly matched to your saved medication list)
+                                  </p>
+                                )}
                                 <p className="mb-1.5 text-xs leading-relaxed">{match.explanation}</p>
                                 <p className="text-xs font-medium text-muted-foreground">💡 {match.advice}</p>
                               </div>

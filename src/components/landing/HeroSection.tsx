@@ -1,10 +1,24 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import heroIllustration from "@/assets/hero-illustration.png";
 import { Shield, Pill, Bell } from "lucide-react";
 import logo from "@/assets/harmonimed-logo.png";
+import { useUserProfile } from "@/components/app/UserProfileContext";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+  const { startOnboarding, completeOnboarding } = useUserProfile();
+
+  const handleLogIn = () => {
+    completeOnboarding();
+    navigate("/app");
+  };
+
+  const handleSignUp = () => {
+    startOnboarding();
+    navigate("/app");
+  };
+
   return (
     <section className="relative min-h-[100svh] overflow-hidden pb-10 pt-12 md:min-h-screen md:pt-20 md:pb-16">
       {/* Background decoration */}
@@ -59,11 +73,11 @@ const HeroSection = () => {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Button variant="hero" size="xl" asChild>
-                  <Link to="/app">Log In</Link>
+                <Button variant="hero" size="xl" type="button" onClick={handleLogIn}>
+                  Log In
                 </Button>
-                <Button variant="hero-outline" size="xl" asChild>
-                  <Link to="/app">Sign Up</Link>
+                <Button variant="hero-outline" size="xl" type="button" onClick={handleSignUp}>
+                  Sign Up
                 </Button>
                 <Button
                   variant="ghost"

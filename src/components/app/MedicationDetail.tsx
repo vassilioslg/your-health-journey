@@ -17,6 +17,7 @@ const categoryConfig = {
 const MedicationDetail = ({ open, onOpenChange, medication }: MedicationDetailProps) => {
   if (!medication) return null;
   const info = getMedicineInfo(medication.name);
+  const isEmbeddedPreview = typeof window !== "undefined" && window.self !== window.top;
 
   const infoSections = [
     { icon: Pill, title: "What is it for?", content: info.whatIsItFor },
@@ -35,9 +36,15 @@ const MedicationDetail = ({ open, onOpenChange, medication }: MedicationDetailPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
+      <DialogContent
+        className={`z-[70] left-0 top-0 h-[100dvh] max-h-[100dvh] w-screen max-w-none translate-x-0 translate-y-0 overflow-y-auto rounded-none px-4 pb-4 ${
+          isEmbeddedPreview
+            ? "pt-24 [&>button]:top-7"
+            : "pt-[calc(env(safe-area-inset-top)+2.75rem)] [&>button]:top-[calc(env(safe-area-inset-top)+1.8rem)]"
+        } [&>button]:right-4 sm:left-[50%] sm:top-[50%] sm:h-[90vh] sm:max-h-[90vh] sm:w-full sm:max-w-2xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg sm:p-6 sm:[&>button]:top-4`}
+      >
+        <DialogHeader className="text-left">
+          <DialogTitle className="flex items-center gap-2 pr-10 text-xl">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
               <Pill className="h-5 w-5 text-primary" />
             </div>
