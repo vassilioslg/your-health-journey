@@ -7,6 +7,8 @@ import { UserProfileProvider } from "@/components/app/UserProfileContext";
 import { PremiumProvider } from "@/components/app/PremiumContext";
 import Index from "./pages/Index.tsx";
 import AppDashboard from "./pages/AppDashboard.tsx";
+import HowItWorksPage from "./pages/HowItWorksPage.tsx";
+import PhonePreview from "./pages/PhonePreview.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -21,7 +23,9 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/how-it-works" element={<HowItWorksPage />} />
               <Route path="/app" element={<AppDashboard />} />
+              <Route path="/phone-preview" element={<PhonePreview />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

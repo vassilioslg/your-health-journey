@@ -42,6 +42,16 @@ const symptomDatabase: Record<string, {
   "muscle ache": [
     { medications: ["Atorvastatin", "Rosuvastatin", "Simvastatin"], severity: "high", explanation: "Muscle aches are a well-known side effect of statins. In rare cases, it can indicate rhabdomyolysis.", advice: "Contact your doctor within 24 hours. If accompanied by dark urine or severe weakness, seek urgent care." },
   ],
+  "cramp": [
+    { medications: ["Furosemide", "Hydrochlorothiazide", "Chlorthalidone"], severity: "moderate", explanation: "Muscle cramps are common with diuretics due to potassium and magnesium loss.", advice: "Hydrate well and ask your doctor about checking electrolytes if cramps persist." },
+    { medications: ["Atorvastatin", "Rosuvastatin", "Simvastatin"], severity: "moderate", explanation: "Statins can cause muscle cramping and tightness.", advice: "If cramps are frequent or painful, speak with your doctor about CK/liver checks and dose review." },
+    { medications: ["Albuterol"], severity: "low", explanation: "Albuterol can occasionally cause temporary muscle cramping from beta-agonist effects.", advice: "Usually short-lived. Monitor frequency and mention it if recurrent." },
+  ],
+  "cramps": [
+    { medications: ["Furosemide", "Hydrochlorothiazide", "Chlorthalidone"], severity: "moderate", explanation: "Muscle cramps are common with diuretics due to potassium and magnesium loss.", advice: "Hydrate well and ask your doctor about checking electrolytes if cramps persist." },
+    { medications: ["Atorvastatin", "Rosuvastatin", "Simvastatin"], severity: "moderate", explanation: "Statins can cause muscle cramping and tightness.", advice: "If cramps are frequent or painful, speak with your doctor about CK/liver checks and dose review." },
+    { medications: ["Albuterol"], severity: "low", explanation: "Albuterol can occasionally cause temporary muscle cramping from beta-agonist effects.", advice: "Usually short-lived. Monitor frequency and mention it if recurrent." },
+  ],
   "cough": [
     { medications: ["Lisinopril", "Enalapril", "Ramipril"], severity: "moderate", explanation: "A persistent dry cough is a very common side effect of ACE inhibitors — affecting up to 15% of patients.", advice: "Speak with your pharmacist. Your doctor may switch you to an ARB (like Losartan) which doesn't cause cough." },
   ],
@@ -180,6 +190,36 @@ const symptomDatabase: Record<string, {
     { medications: ["Sertraline", "Fluoxetine", "Venlafaxine"], severity: "low", explanation: "Excessive sweating is a common side effect of SSRIs and SNRIs.", advice: "Wear breathable clothing. Stay hydrated. Discuss with your doctor if bothersome." },
     { medications: ["Metformin"], severity: "moderate", explanation: "Sweating with Metformin could be a sign of low blood sugar.", advice: "Check your blood sugar level. Have a sugary snack if low." },
   ],
+  "vomiting": [
+    { medications: ["Metformin", "Semaglutide", "Liraglutide"], severity: "moderate", explanation: "Vomiting can occur with diabetes medications, especially during initiation or dose increases.", advice: "Take doses with food when appropriate and stay hydrated. If persistent, contact your doctor." },
+    { medications: ["Ibuprofen", "Naproxen", "Diclofenac"], severity: "moderate", explanation: "NSAID-related stomach irritation can progress from nausea to vomiting.", advice: "Stop taking on an empty stomach and seek pharmacist advice if vomiting continues." },
+    { medications: ["Codeine", "Tramadol", "Morphine"], severity: "moderate", explanation: "Opioids commonly trigger nausea and vomiting by affecting the brain's vomiting center.", advice: "Take with food and ask about anti-nausea support if needed." },
+  ],
+  "itching": [
+    { medications: ["Amoxicillin", "Cephalexin", "Sulfamethoxazole"], severity: "moderate", explanation: "Itching may indicate an allergic reaction to antibiotics.", advice: "If accompanied by rash, swelling, or breathing difficulty, seek urgent medical help." },
+    { medications: ["Oxycodone", "Codeine", "Morphine"], severity: "low", explanation: "Opioids can cause histamine release, leading to generalized itching.", advice: "Often manageable, but report severe or persistent itching to your clinician." },
+    { medications: ["Lisinopril", "Enalapril"], severity: "moderate", explanation: "ACE inhibitors can occasionally trigger allergic-type skin symptoms including itching.", advice: "Monitor for swelling of lips/tongue and seek urgent care if present." },
+  ],
+  "brain fog": [
+    { medications: ["Gabapentin", "Pregabalin", "Hydroxyzine"], severity: "moderate", explanation: "Sedating medications can reduce concentration and mental clarity.", advice: "Avoid critical tasks until symptoms improve. Discuss dose timing with your doctor." },
+    { medications: ["Metoprolol", "Atenolol", "Clonidine"], severity: "low", explanation: "Some blood pressure medications can cause cognitive dullness in sensitive patients.", advice: "Track when symptoms occur and discuss alternatives if it affects daily function." },
+    { medications: ["Atorvastatin", "Simvastatin"], severity: "low", explanation: "A subset of patients report memory or concentration changes with statins.", advice: "Report persistent brain fog to your doctor for review." },
+  ],
+  "ear ringing": [
+    { medications: ["Aspirin", "Ibuprofen", "Naproxen"], severity: "moderate", explanation: "NSAIDs, especially at higher doses, can cause tinnitus (ringing in the ears).", advice: "Review your dose with your doctor, particularly if ringing is persistent." },
+    { medications: ["Furosemide"], severity: "moderate", explanation: "Loop diuretics can occasionally affect hearing and cause ear ringing.", advice: "Report new tinnitus promptly, especially if hearing changes are present." },
+    { medications: ["Azithromycin", "Vancomycin"], severity: "moderate", explanation: "Some antibiotics may affect hearing pathways and trigger ringing.", advice: "Contact your doctor if symptoms start after antibiotic changes." },
+  ],
+  "sore throat": [
+    { medications: ["Lisinopril", "Ramipril", "Enalapril"], severity: "low", explanation: "ACE inhibitors can cause persistent throat irritation along with dry cough.", advice: "If sore throat persists more than a few days, discuss changing therapy with your doctor." },
+    { medications: ["Fluticasone inhaler", "Budesonide inhaler"], severity: "low", explanation: "Inhaled corticosteroids can irritate the throat if technique is suboptimal.", advice: "Rinse your mouth and throat after each dose." },
+    { medications: ["Methotrexate"], severity: "moderate", explanation: "Sore throat can rarely indicate low white blood cells on immunosuppressants.", advice: "Seek urgent blood count review if sore throat is severe or accompanied by fever." },
+  ],
+  "restlessness": [
+    { medications: ["Albuterol"], severity: "low", explanation: "Bronchodilators can cause jitteriness and restlessness shortly after dosing.", advice: "Usually short-lived. Monitor dose timing and avoid extra doses." },
+    { medications: ["Sertraline", "Fluoxetine", "Venlafaxine"], severity: "moderate", explanation: "Some antidepressants can cause activating side effects, especially early on.", advice: "Discuss dose timing or adjustment with your doctor if disruptive." },
+    { medications: ["Metoclopramide", "Haloperidol"], severity: "high", explanation: "Marked inner restlessness may represent akathisia, a potentially severe medication side effect.", advice: "Seek prompt medical review for severe inability to sit still." },
+  ],
 };
 
 // Interaction risks
@@ -195,8 +235,10 @@ const interactionAlerts: {
   { symptom: "fatigue", drugs: ["Metformin", "Lisinopril"], alert: "Combined fatigue effects: Lisinopril lowers blood pressure while Metformin can affect blood sugar. Together they may amplify fatigue — check both BP and glucose levels.", severity: "moderate" },
   { symptom: "bruising", drugs: ["Aspirin", "Ibuprofen"], alert: "Taking Aspirin and Ibuprofen together significantly increases bleeding risk. Ibuprofen can also reduce Aspirin's heart-protective effect.", severity: "high" },
   { symptom: "nausea", drugs: ["Metformin", "Ibuprofen"], alert: "Both Metformin and Ibuprofen can cause GI distress. Together they may significantly worsen stomach symptoms.", severity: "moderate" },
+  { symptom: "vomiting", drugs: ["Metformin", "Ibuprofen"], alert: "Vomiting with Metformin + Ibuprofen can indicate significant GI irritation and dehydration risk. This combination can also stress kidney function if fluid intake is low.", severity: "high" },
   { symptom: "drowsiness", drugs: ["Gabapentin", "Hydroxyzine"], alert: "Combining Gabapentin with Hydroxyzine amplifies sedation. Avoid driving or machinery. Risk of excessive sedation.", severity: "high" },
   { symptom: "swelling", drugs: ["Amlodipine", "Ibuprofen"], alert: "NSAIDs like Ibuprofen can worsen the fluid retention caused by Amlodipine and may reduce its blood pressure-lowering effect.", severity: "moderate" },
+  { symptom: "ear ringing", drugs: ["Aspirin", "Furosemide"], alert: "Ear ringing while taking Aspirin + Furosemide may indicate additive ototoxic effects, especially at higher doses.", severity: "moderate" },
 ];
 
 // Intelligent reasoning for unrecognized symptoms
@@ -317,32 +359,319 @@ const severityConfig = {
   low: { bg: "bg-success/10", border: "border-success/20", text: "text-success", label: "Low Risk" },
 };
 
+// Map everyday phrasing to core symptom keywords in the database.
+const symptomPhraseMappings: { triggers: string[]; keywords: string[] }[] = [
+  {
+    triggers: ["lightheaded", "light headed", "woozy", "room spinning", "spinning", "off balance", "faint", "fainting"],
+    keywords: ["dizzy", "dizziness"],
+  },
+  {
+    triggers: ["nauseous", "queasy", "sick to my stomach", "feel sick", "throw up", "vomit", "vomiting"],
+    keywords: ["nausea", "vomiting"],
+  },
+  {
+    triggers: ["head hurts", "head pain", "migraine"],
+    keywords: ["headache"],
+  },
+  {
+    triggers: ["very tired", "exhausted", "drained", "no energy", "worn out", "sleepy all day"],
+    keywords: ["fatigue", "drowsiness"],
+  },
+  {
+    triggers: ["upset stomach", "stomach upset", "stomach ache", "belly pain"],
+    keywords: ["stomach", "nausea"],
+  },
+  {
+    triggers: ["muscles hurt", "sore muscles", "muscle soreness"],
+    keywords: ["muscle pain", "muscle ache"],
+  },
+  {
+    triggers: ["cramping", "cramping up", "cramp up", "muscle spasm", "leg cramp", "charley horse"],
+    keywords: ["cramp", "cramps"],
+  },
+  {
+    triggers: ["itchy", "itch", "itching skin", "hives"],
+    keywords: ["itching", "rash"],
+  },
+  {
+    triggers: ["mind foggy", "foggy", "can't focus", "can't concentrate", "mental fog"],
+    keywords: ["brain fog"],
+  },
+  {
+    triggers: ["ringing ears", "ears ringing", "tinnitus"],
+    keywords: ["ear ringing"],
+  },
+  {
+    triggers: ["throat hurts", "throat pain", "scratchy throat"],
+    keywords: ["sore throat"],
+  },
+  {
+    triggers: ["restless", "can't sit still", "jittery", "on edge"],
+    keywords: ["restlessness"],
+  },
+  {
+    triggers: ["can't sleep", "trouble sleeping", "waking up all night", "sleep problems"],
+    keywords: ["insomnia"],
+  },
+  {
+    triggers: ["blurry vision", "vision blurry", "can't see clearly"],
+    keywords: ["blurred vision"],
+  },
+  {
+    triggers: ["swollen ankles", "swollen feet", "puffy legs", "fluid retention", "edema"],
+    keywords: ["swelling"],
+  },
+  {
+    triggers: ["short of breath", "breathless", "winded", "can't catch my breath"],
+    keywords: ["shortness of breath", "breathing"],
+  },
+  {
+    triggers: ["heart racing", "racing heart", "pounding heart", "heart fluttering"],
+    keywords: ["palpitations"],
+  },
+  {
+    triggers: ["sweaty", "sweating a lot", "night sweats", "clammy"],
+    keywords: ["sweating"],
+  },
+  {
+    triggers: ["constipated", "hard stool", "can't poop", "not passing stool"],
+    keywords: ["constipation"],
+  },
+  {
+    triggers: ["acid reflux", "burning chest", "burning throat after meals"],
+    keywords: ["heartburn"],
+  },
+  {
+    triggers: ["sad", "low mood", "down all day", "hopeless"],
+    keywords: ["depression"],
+  },
+  {
+    triggers: ["anxious", "panic", "panicky", "on edge all day"],
+    keywords: ["anxiety"],
+  },
+  {
+    triggers: ["joint aches", "achy joints", "stiff joints"],
+    keywords: ["joint pain"],
+  },
+  {
+    triggers: ["hair thinning", "losing hair", "hair shedding"],
+    keywords: ["hair loss"],
+  },
+  {
+    triggers: ["pins and needles", "prickly feeling", "hands tingling", "feet tingling"],
+    keywords: ["tingling", "numbness"],
+  },
+  {
+    triggers: ["peeing a lot", "urinating often", "toilet all the time"],
+    keywords: ["frequent urination"],
+  },
+];
+
+// Broad alias coverage so users don't need exact medical keywords.
+const symptomKeywordAliases: Record<string, string[]> = {
+  dizzy: ["dizzy spell", "headedness", "vertigo", "feeling dizzy"],
+  dizziness: ["dizzy", "lightheadedness", "vertigo"],
+  nausea: ["nauseous", "queasy", "sick to stomach", "feeling sick"],
+  headache: ["head pain", "head pressure", "migraine"],
+  "muscle pain": ["muscles hurt", "aching muscles", "sore muscles"],
+  "muscle ache": ["muscle soreness", "achy muscles"],
+  cough: ["coughing"],
+  "dry cough": ["tickly cough"],
+  stomach: ["stomach pain", "stomach upset", "belly pain", "upset stomach"],
+  diarrhea: ["loose stool", "loose stools", "runny stool"],
+  fatigue: ["tired", "exhausted", "drained", "no energy"],
+  rash: ["skin rash", "red spots", "skin reaction"],
+  swelling: ["swollen", "puffy", "edema"],
+  breathing: ["trouble breathing", "breathing trouble"],
+  "shortness of breath": ["short of breath", "breathless", "can't catch breath"],
+  insomnia: ["can't sleep", "cant sleep", "sleepless", "trouble sleeping"],
+  "metallic taste": ["metal taste", "weird taste"],
+  constipation: ["constipated", "hard stool", "hard stools"],
+  "weight gain": ["gaining weight", "putting on weight"],
+  "dry mouth": ["mouth dry", "cotton mouth"],
+  "blurred vision": ["blurry vision", "vision blurry", "can't see clearly"],
+  anxiety: ["anxious", "panicky", "panic", "on edge"],
+  depression: ["depressed", "low mood", "feeling down"],
+  "joint pain": ["joint ache", "achy joints", "stiff joints"],
+  bruising: ["bruise", "bruises", "easy bruising"],
+  tremor: ["shaky", "shaking", "trembling"],
+  heartburn: ["acid reflux", "reflux"],
+  "appetite loss": ["loss of appetite", "no appetite"],
+  drowsiness: ["drowsy", "sleepy", "sleepiness"],
+  "mood swings": ["mood changes", "moody"],
+  tingling: ["pins and needles", "prickly feeling"],
+  numbness: ["numb", "loss of sensation"],
+  "hair loss": ["hair shedding", "hair thinning"],
+  "frequent urination": ["peeing a lot", "urinating often", "toilet all the time"],
+  palpitations: ["heart racing", "racing heart", "heart pounding", "heart fluttering"],
+  sweating: ["sweaty", "sweating a lot", "clammy"],
+  vomiting: ["throwing up", "throw up", "being sick"],
+  itching: ["itchy", "itching skin", "itch"],
+  "brain fog": ["foggy", "mental fog", "can't focus", "cant focus"],
+  "ear ringing": ["ears ringing", "ringing ears", "tinnitus"],
+  "sore throat": ["throat pain", "scratchy throat"],
+  restlessness: ["restless", "can't sit still", "cant sit still", "jittery"],
+  cramp: ["cramping", "cramping up", "cramp up", "charley horse"],
+  cramps: ["cramping", "leg cramps", "muscle cramps"],
+};
+
+const normalizeText = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const escapeRegExp = (text: string) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const containsTerm = (text: string, term: string) => {
+  if (!term) return false;
+  const pattern = new RegExp(`\\b${escapeRegExp(term)}\\b`, "i");
+  return pattern.test(text);
+};
+
+const buildKeywordTerms = (keyword: string) => {
+  const base = normalizeText(keyword);
+  const terms = new Set<string>([base]);
+  const aliases = symptomKeywordAliases[keyword] ?? [];
+  aliases.forEach((alias) => terms.add(normalizeText(alias)));
+  base.split(" ").forEach((token) => {
+    if (token.length <= 3) return;
+    terms.add(token);
+    if (token.endsWith("s")) terms.add(token.slice(0, -1));
+    if (token.endsWith("y")) terms.add(`${token.slice(0, -1)}ies`);
+  });
+  return Array.from(terms).filter(Boolean);
+};
+
+const symptomKeywordSearchIndex = Object.keys(symptomDatabase).map((keyword) => ({
+  keyword,
+  terms: buildKeywordTerms(keyword),
+}));
+
+const matcherStopWords = new Set([
+  "i", "im", "i'm", "am", "is", "are", "the", "a", "an", "and", "of", "to", "my",
+  "me", "it", "that", "when", "with", "very", "really", "feel", "feeling",
+]);
+
+const tokenize = (text: string) =>
+  normalizeText(text)
+    .split(" ")
+    .filter(Boolean)
+    .filter((token) => !matcherStopWords.has(token));
+
+const stemToken = (token: string) =>
+  token
+    .replace(/(iness|ness|ing|edly|edly|ed|ly|es|s)$/i, "")
+    .replace(/(ation|ition|tion)$/i, "t");
+
+const levenshteinDistance = (a: string, b: string) => {
+  if (a === b) return 0;
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const matrix: number[][] = Array.from({ length: rows }, () => Array(cols).fill(0));
+  for (let i = 0; i < rows; i++) matrix[i][0] = i;
+  for (let j = 0; j < cols; j++) matrix[0][j] = j;
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      );
+    }
+  }
+  return matrix[rows - 1][cols - 1];
+};
+
+const isApproxTokenMatch = (inputToken: string, keywordToken: string) => {
+  const inputStem = stemToken(inputToken);
+  const keywordStem = stemToken(keywordToken);
+  if (!inputStem || !keywordStem) return false;
+  if (inputStem === keywordStem) return true;
+  if (
+    (inputStem.includes(keywordStem) || keywordStem.includes(inputStem)) &&
+    Math.min(inputStem.length, keywordStem.length) >= 4
+  ) {
+    return true;
+  }
+  const sharedPrefixLength = [...inputStem].findIndex((char, idx) => char !== keywordStem[idx]);
+  const commonPrefix = sharedPrefixLength === -1 ? Math.min(inputStem.length, keywordStem.length) : sharedPrefixLength;
+  if (commonPrefix >= 4) return true;
+  if (Math.abs(inputStem.length - keywordStem.length) > 2) return false;
+  const maxDistance = keywordStem.length <= 4 ? 1 : 2;
+  return levenshteinDistance(inputStem, keywordStem) <= maxDistance;
+};
+
+const phraseMatchesInput = (inputTokens: string[], phrase: string) => {
+  const phraseTokens = tokenize(phrase);
+  if (!phraseTokens.length) return false;
+  return phraseTokens.every((phraseToken) =>
+    inputTokens.some((inputToken) => isApproxTokenMatch(inputToken, phraseToken)),
+  );
+};
+
 const SymptomLogger = () => {
   const [input, setInput] = useState("");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
   const analyzeSymptom = () => {
-    const trimmed = input.trim().toLowerCase();
-    if (!trimmed || trimmed.length > 200) return;
+    const rawInput = input.trim();
+    if (!rawInput || rawInput.length > 200) return;
+    const normalizedInput = normalizeText(rawInput);
+    const inputTokens = tokenize(rawInput);
+
+    // Find core symptom keywords from direct matches, natural phrasing, and typo-tolerant matching.
+    const matchedKeywords = new Set<string>();
+    symptomKeywordSearchIndex.forEach(({ keyword, terms }) => {
+      if (terms.some((term) => containsTerm(normalizedInput, term) || phraseMatchesInput(inputTokens, term))) {
+        matchedKeywords.add(keyword);
+      }
+    });
+    symptomPhraseMappings.forEach(({ triggers, keywords }) => {
+      if (
+        triggers.some(
+          (trigger) =>
+            containsTerm(normalizedInput, normalizeText(trigger)) ||
+            phraseMatchesInput(inputTokens, trigger),
+        )
+      ) {
+        keywords.forEach((keyword) => matchedKeywords.add(keyword));
+      }
+    });
 
     // Find matching side effects
     const matches: typeof symptomDatabase[string] = [];
     const matchedInteractions: typeof interactionAlerts = [];
 
-    Object.entries(symptomDatabase).forEach(([keyword, effects]) => {
-      if (trimmed.includes(keyword)) {
-        effects.forEach((e) => {
-          if (!matches.some((m) => m.medications.join() === e.medications.join() && m.explanation === e.explanation)) {
-            matches.push(e);
-          }
-        });
-      }
+    matchedKeywords.forEach((keyword) => {
+      const effects = symptomDatabase[keyword];
+      if (!effects) return;
+      effects.forEach((effect) => {
+        if (!matches.some((m) => m.medications.join() === effect.medications.join() && m.explanation === effect.explanation)) {
+          matches.push(effect);
+        }
+      });
     });
 
     interactionAlerts.forEach((ia) => {
-      if (trimmed.includes(ia.symptom)) {
-        matchedInteractions.push(ia);
+      if (
+        matchedKeywords.has(ia.symptom) ||
+        containsTerm(normalizedInput, normalizeText(ia.symptom)) ||
+        phraseMatchesInput(inputTokens, ia.symptom)
+      ) {
+        const alreadyAdded = matchedInteractions.some(
+          (match) =>
+            match.alert === ia.alert &&
+            match.severity === ia.severity &&
+            match.drugs.join() === ia.drugs.join(),
+        );
+        if (!alreadyAdded) {
+          matchedInteractions.push(ia);
+        }
       }
     });
 
@@ -354,7 +683,11 @@ const SymptomLogger = () => {
     let intelligentInsight: LogEntry["intelligentInsight"] = undefined;
     if (matches.length === 0) {
       for (const reasoning of intelligentReasoning) {
-        if (reasoning.keywords.some((kw) => trimmed.includes(kw))) {
+        if (
+          reasoning.keywords.some(
+            (kw) => containsTerm(normalizedInput, normalizeText(kw)) || phraseMatchesInput(inputTokens, kw),
+          )
+        ) {
           intelligentInsight = {
             reasoning: reasoning.reasoning,
             relatedMedCategories: reasoning.relatedMedCategories,
@@ -402,6 +735,7 @@ const SymptomLogger = () => {
   const quickSymptoms = [
     "Dizzy", "Nausea", "Headache", "Muscle pain", "Fatigue", "Cough",
     "Insomnia", "Drowsiness", "Constipation", "Dry mouth", "Brain fog", "Cramps",
+    "Vomiting", "Itching", "Ear ringing", "Sore throat", "Restlessness",
   ];
 
   return (
