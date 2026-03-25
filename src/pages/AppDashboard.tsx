@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/harmonimed-logo.png";
-import { Pill, AlertTriangle, Bell, BookOpen, MessageCircle, ArrowLeft, Crown, Bot, FileText } from "lucide-react";
+import { Pill, AlertTriangle, Bell, MessageCircle, ArrowLeft, Crown, Bot, FileText } from "lucide-react";
 import MedicationList from "@/components/app/MedicationList";
 import InteractionChecker from "@/components/app/InteractionChecker";
 import SafetyNudges from "@/components/app/SafetyNudges";
-import SideEffectsGuide from "@/components/app/SideEffectsGuide";
+
 import SymptomLogger from "@/components/app/SymptomLogger";
 import OnboardingFlow from "@/components/app/OnboardingFlow";
 
@@ -16,14 +16,13 @@ import UpgradeModal from "@/components/app/UpgradeModal";
 import { useUserProfile } from "@/components/app/UserProfileContext";
 import { usePremium } from "@/components/app/PremiumContext";
 
-type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "side-effects" | "reports" | "ai-chat";
+type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "reports" | "ai-chat";
 
 const tabs: { id: Tab; label: string; icon: typeof Pill; premium?: boolean }[] = [
   { id: "medications", label: "Meds", icon: Pill },
   { id: "interactions", label: "Interactions", icon: AlertTriangle },
   { id: "symptom-log", label: "Log", icon: MessageCircle },
   { id: "nudges", label: "Nudges", icon: Bell },
-  { id: "side-effects", label: "Effects", icon: BookOpen },
   { id: "reports", label: "Reports", icon: FileText, premium: true },
   { id: "ai-chat", label: "AI Chat", icon: Bot, premium: true },
 ];
@@ -74,7 +73,7 @@ const AppDashboard = () => {
           {activeTab === "interactions" && <InteractionChecker />}
           {activeTab === "symptom-log" && <SymptomLogger />}
           {activeTab === "nudges" && <SafetyNudges />}
-          {activeTab === "side-effects" && <SideEffectsGuide />}
+          
           
           {activeTab === "reports" && <HealthReports />}
           {activeTab === "ai-chat" && <AIHealthChat />}
