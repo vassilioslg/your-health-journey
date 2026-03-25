@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserProfileProvider } from "@/components/app/UserProfileContext";
 import { PremiumProvider } from "@/components/app/PremiumContext";
+import { CaregiverProvider } from "@/components/app/CaregiverContext";
 import Index from "./pages/Index.tsx";
 import AppDashboard from "./pages/AppDashboard.tsx";
 import HowItWorksPage from "./pages/HowItWorksPage.tsx";
@@ -17,6 +18,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <UserProfileProvider>
       <PremiumProvider>
+        <CaregiverProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -31,6 +33,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </CaregiverProvider>
       </PremiumProvider>
     </UserProfileProvider>
   </QueryClientProvider>
