@@ -26,7 +26,7 @@ interface CaregiverContextType {
   isCaregiverMode: boolean;
   toggleCaregiverMode: () => void;
   linkedPatients: CaregiverLink[];
-  addPatient: (name: string, relationship: string) => void;
+  addPatient: (name: string, relationship: string, shareCode?: string) => void;
   removePatient: (id: string) => void;
   updateNotifications: (id: string, notifications: CaregiverLink["notifications"]) => void;
   alerts: CaregiverAlert[];
@@ -85,14 +85,16 @@ export const CaregiverProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem("harmonimed-caregiver", String(next));
   };
 
-  const addPatient = (name: string, relationship: string) => {
+  const addPatient = (name: string, relationship: string, shareCode?: string) => {
+    const normalizedShareCode = shareCode?.trim().toUpperCase() || generateShareCode();
+
     setLinkedPatients((prev) => [
       ...prev,
       {
         id: Date.now().toString(),
         patientName: name,
         relationship,
-        shareCode: generateShareCode(),
+        shareCode: normalizedShareCode,
         linkedAt: "Just now",
         notifications: { missedDose: true, newSymptom: true, urgentAlert: true },
       },

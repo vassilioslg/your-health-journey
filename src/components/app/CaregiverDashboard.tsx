@@ -25,7 +25,7 @@ const CaregiverDashboard = () => {
 
   const [activeTab, setActiveTab] = useState<CaregiverTab>("alerts");
   const [showAddPatient, setShowAddPatient] = useState(false);
-  const [newPatient, setNewPatient] = useState({ name: "", relationship: "" });
+  const [newPatient, setNewPatient] = useState({ name: "", relationship: "", shareCode: "" });
   const [copied, setCopied] = useState(false);
 
   const copyCode = (code: string) => {
@@ -36,8 +36,8 @@ const CaregiverDashboard = () => {
 
   const handleAddPatient = () => {
     if (!newPatient.name || !newPatient.relationship) return;
-    addPatient(newPatient.name, newPatient.relationship);
-    setNewPatient({ name: "", relationship: "" });
+    addPatient(newPatient.name, newPatient.relationship, newPatient.shareCode);
+    setNewPatient({ name: "", relationship: "", shareCode: "" });
     setShowAddPatient(false);
   };
 
@@ -167,6 +167,12 @@ const CaregiverDashboard = () => {
                   value={newPatient.name}
                   onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
                   className="rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                />
+                <input
+                  placeholder="Patient share code (e.g. HM-7K3X-9R2P)"
+                  value={newPatient.shareCode}
+                  onChange={(e) => setNewPatient({ ...newPatient, shareCode: e.target.value })}
+                  className="rounded-lg border bg-background px-3 py-2.5 text-sm uppercase outline-none focus:ring-2 focus:ring-primary"
                 />
                 <select
                   value={newPatient.relationship}

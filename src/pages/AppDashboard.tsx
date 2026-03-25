@@ -1,6 +1,6 @@
 import { useState } from "react";
 import logo from "@/assets/harmonimed-logo.png";
-import { Pill, AlertTriangle, Bell, MessageCircle, Bot, FileText, Users } from "lucide-react";
+import { Pill, AlertTriangle, Bell, MessageCircle, Bot, FileText, Users, UserRound } from "lucide-react";
 import MedicationList from "@/components/app/MedicationList";
 import InteractionChecker from "@/components/app/InteractionChecker";
 import SafetyNudges from "@/components/app/SafetyNudges";
@@ -10,15 +10,17 @@ import HealthReports from "@/components/app/HealthReports";
 import AIHealthChat from "@/components/app/AIHealthChat";
 import UpgradeModal from "@/components/app/UpgradeModal";
 import CaregiverDashboard from "@/components/app/CaregiverDashboard";
+import ProfileSection from "@/components/app/ProfileSection";
 import { useUserProfile } from "@/components/app/UserProfileContext";
 import { useCaregiver } from "@/components/app/CaregiverContext";
 
-type Tab = "medications" | "interactions" | "symptom-log" | "nudges" | "reports" | "ai-chat" | "caregiver";
+type Tab = "medications" | "interactions" | "symptom-log" | "profile" | "nudges" | "reports" | "ai-chat" | "caregiver";
 
 const allTabs: { id: Tab; label: string; icon: typeof Pill }[] = [
   { id: "medications", label: "Meds", icon: Pill },
   { id: "interactions", label: "Interactions", icon: AlertTriangle },
   { id: "symptom-log", label: "Log", icon: MessageCircle },
+  { id: "profile", label: "Profile", icon: UserRound },
   { id: "nudges", label: "Nudges", icon: Bell },
   { id: "caregiver", label: "Caregiver", icon: Users },
   { id: "reports", label: "Reports", icon: FileText },
@@ -107,6 +109,7 @@ const AppDashboard = () => {
           {activeTab === "medications" && <MedicationList />}
           {activeTab === "interactions" && <InteractionChecker />}
           {activeTab === "symptom-log" && <SymptomLogger />}
+          {activeTab === "profile" && <ProfileSection />}
           {activeTab === "nudges" && <SafetyNudges />}
           {activeTab === "caregiver" && <CaregiverDashboard />}
           {activeTab === "reports" && <HealthReports />}
