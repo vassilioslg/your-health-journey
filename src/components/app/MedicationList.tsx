@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pill, X, Clock, Droplets, ChevronRight, Bell, BellOff, Check } from "lucide-react";
+import { Plus, Pill, X, Clock, Droplets, ChevronRight, Bell, BellOff, Check, ScanLine, Loader2 } from "lucide-react";
 import { MEDICINES_LIST } from "@/data/medicines";
+import { lookupMedicineByBarcode } from "@/data/medicineBarcodes";
 import MedicationDetail from "@/components/app/MedicationDetail";
 import PremiumGate from "./PremiumGate";
 import { usePremium } from "./PremiumContext";
@@ -38,6 +39,12 @@ const sampleReminders: Reminder[] = [
 
 const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+type BarcodeDetectorLike = {
+  detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue?: string }>>;
+};
+
+type BarcodeDetectorCtor = new (options?: { formats?: string[] }) => BarcodeDetectorLike;
+
 const MedicationList = () => {
   const { isPremium } = usePremium();
   const [medications, setMedications] = useState<Medication[]>(sampleMeds);
@@ -48,12 +55,22 @@ const MedicationList = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scannerStatus, setScannerStatus] = useState("Point your camera at a medication barcode");
+  const [scannerError, setScannerError] = useState("");
+  const [isScannerLoading, setIsScannerLoading] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState("");
   const [showReminders, setShowReminders] = useState<string | null>(null); // medId
   const [addingReminder, setAddingReminder] = useState<string | null>(null); // medId
   const [newReminderTime, setNewReminderTime] = useState("08:00");
   const [newReminderDays, setNewReminderDays] = useState([...allDays]);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectorRef = useRef<BarcodeDetectorLike | null>(null);
+  const scanFrameRef = useRef<number | null>(null);
+  const hasDetectedRef = useRef(false);
 
   const isValidMedicine = MEDICINES_LIST.some(
     (m) => m.toLowerCase() === newMed.name.toLowerCase()
@@ -105,6 +122,132 @@ const MedicationList = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const stopScanner = useCallback(() => {
+    if (scanFrameRef.current !== null) {
+      cancelAnimationFrame(scanFrameRef.current);
+      scanFrameRef.current = null;
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    detectorRef.current = null;
+    setIsScannerLoading(false);
+  }, []);
+
+  const handleBarcodeDetected = useCallback((rawValue: string) => {
+    const code = rawValue.trim();
+    if (!code) return;
+
+    setScannedBarcode(code);
+    const matchedMedicine = lookupMedicineByBarcode(code);
+
+    if (matchedMedicine) {
+      setNewMed((prev) => ({ ...prev, name: matchedMedicine }));
+      setShowSuggestions(false);
+      setSuggestions([]);
+      setActiveSuggestion(-1);
+      setScannerStatus(`Scanned ${code} and matched ${matchedMedicine}`);
+    } else {
+      setScannerStatus(`Scanned ${code}. We could not match it yet, so enter medicine name manually.`);
+    }
+
+    setShowScanner(false);
+  }, []);
+
+  useEffect(() => {
+    if (!showScanner) {
+      stopScanner();
+      return;
+    }
+
+    let cancelled = false;
+    hasDetectedRef.current = false;
+
+    const startScanner = async () => {
+      setScannerError("");
+      setScannerStatus("Starting camera...");
+      setIsScannerLoading(true);
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setScannerError("Camera access is unavailable in this browser.");
+        setIsScannerLoading(false);
+        return;
+      }
+
+      const detectorConstructor = (window as Window & { BarcodeDetector?: BarcodeDetectorCtor }).BarcodeDetector;
+      if (!detectorConstructor) {
+        setScannerError("Barcode scanning is not supported here. Try Chrome or Edge for live scanning.");
+        setIsScannerLoading(false);
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (!video) {
+          throw new Error("Video preview failed to initialize.");
+        }
+
+        video.srcObject = stream;
+        video.setAttribute("playsinline", "true");
+        await video.play();
+
+        detectorRef.current = new detectorConstructor({
+          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39"],
+        });
+
+        setScannerStatus("Point the barcode inside the guide frame");
+        setIsScannerLoading(false);
+
+        const scanLoop = async () => {
+          if (cancelled || !videoRef.current || !detectorRef.current) return;
+
+          try {
+            if (videoRef.current.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA) {
+              const results = await detectorRef.current.detect(videoRef.current);
+              const detected = results.find((result) => result.rawValue?.trim())?.rawValue;
+
+              if (detected && !hasDetectedRef.current) {
+                hasDetectedRef.current = true;
+                handleBarcodeDetected(detected);
+                return;
+              }
+            }
+          } catch {
+            // Keep scanning even if one detection frame fails.
+          }
+
+          scanFrameRef.current = requestAnimationFrame(scanLoop);
+        };
+
+        scanFrameRef.current = requestAnimationFrame(scanLoop);
+      } catch {
+        setScannerError("Unable to access camera. Please allow permissions and try again.");
+        setIsScannerLoading(false);
+      }
+    };
+
+    void startScanner();
+
+    return () => {
+      cancelled = true;
+      stopScanner();
+    };
+  }, [showScanner, stopScanner, handleBarcodeDetected]);
+
   const addMedication = () => {
     if (!isValidMedicine || !newMed.dose) return;
     const doseValue = newMed.dose.replace(/[^0-9.]/g, "");
@@ -120,6 +263,10 @@ const MedicationList = () => {
       },
     ]);
     setNewMed({ name: "", dose: "", frequency: "Once daily" });
+    setScannedBarcode("");
+    setScannerError("");
+    setScannerStatus("Point your camera at a medication barcode");
+    setShowScanner(false);
     setShowAdd(false);
   };
 
@@ -177,7 +324,15 @@ const MedicationList = () => {
         <div className="mb-6 rounded-2xl border bg-card p-4 shadow-sm animate-fade-in">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="font-bold">Add Medication</h3>
-            <button onClick={() => { setShowAdd(false); setShowSuggestions(false); }} className="text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => {
+                setShowAdd(false);
+                setShowSuggestions(false);
+                setShowScanner(false);
+                setScannerError("");
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -217,6 +372,71 @@ const MedicationList = () => {
                 </div>
               )}
             </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant={showScanner ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setScannerError("");
+                  setShowScanner((prev) => !prev);
+                }}
+              >
+                <ScanLine className="h-4 w-4" />
+                {showScanner ? "Close Scanner" : "Scan Barcode"}
+              </Button>
+              {scannedBarcode && (
+                <p className="truncate text-xs text-muted-foreground">
+                  Last scan: {scannedBarcode}
+                </p>
+              )}
+            </div>
+
+            {showScanner && (
+              <div className="rounded-xl border bg-muted/20 p-3 animate-fade-in">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Live Barcode Scanner
+                  </p>
+                  <button
+                    onClick={() => setShowScanner(false)}
+                    className="text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="relative overflow-hidden rounded-lg bg-black">
+                  {scannerError ? (
+                    <div className="flex h-52 items-center justify-center px-4 text-center text-xs text-white/85">
+                      {scannerError}
+                    </div>
+                  ) : (
+                    <>
+                      <video
+                        ref={videoRef}
+                        className="h-52 w-full object-cover"
+                        muted
+                        autoPlay
+                        playsInline
+                      />
+                      <div className="pointer-events-none absolute inset-4 rounded-lg border-2 border-dashed border-white/75" />
+                      {isScannerLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/45">
+                          <Loader2 className="h-5 w-5 animate-spin text-white" />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <p className={`mt-2 text-xs ${scannerError ? "text-destructive" : "text-muted-foreground"}`}>
+                  {scannerError || scannerStatus}
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <div className="relative flex-1">
                 <input
