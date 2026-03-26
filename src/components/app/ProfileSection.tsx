@@ -1,11 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { useUserProfile } from "./UserProfileContext";
 import { getStoredMedicationNames } from "@/lib/medicationsStorage";
-import { UserRound, Heart, ShieldAlert, Thermometer, Pill } from "lucide-react";
+import { UserRound, Heart, ShieldAlert, Thermometer, Pill, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const ProfileSection = () => {
-  const { profile, startOnboarding } = useUserProfile();
+  const { profile, startOnboarding, resetProfile } = useUserProfile();
+  const navigate = useNavigate();
   const medicationNames = getStoredMedicationNames();
+
+  const handleLogout = () => {
+    resetProfile();
+    navigate("/login");
+  };
 
   const profileRows = [
     { label: "Age", value: profile.age || "Not set" },
@@ -129,6 +136,16 @@ const ProfileSection = () => {
         <p className="text-xs text-muted-foreground">
           Keep this section updated so interaction checks and symptom analysis stay relevant to your context.
         </p>
+      </div>
+
+      <div className="mt-4">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-full border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+        >
+          <LogOut className="h-4 w-4" /> Log out
+        </Button>
       </div>
     </div>
   );

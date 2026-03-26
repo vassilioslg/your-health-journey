@@ -120,11 +120,11 @@ const HealthReports = () => {
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-2">
-                <Button variant="hero" size="sm" className="flex-1">
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button variant="hero" size="sm" className="w-full sm:flex-1">
                   <Download className="h-4 w-4" /> Download PDF
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button variant="outline" size="sm" className="w-full sm:flex-1">
                   Share with Doctor
                 </Button>
               </div>

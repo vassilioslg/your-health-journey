@@ -24,7 +24,10 @@ interface Reminder {
   days: string[];
   enabled: boolean;
   lastTaken?: string;
+  scheduledAt?: string;
 }
+
+const HARMONIMED_REMINDERS_KEY = "harmonimed-reminders";
 
 const sampleMeds: Medication[] = [
   { id: "1", name: "Metformin", dose: "500mg", frequency: "Twice daily", time: "Morning & Evening", dosesPerDay: 2 },
@@ -41,6 +44,87 @@ const sampleReminders: Reminder[] = [
 
 const allDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+const parseTimeToMinutes = (timeValue: string) => {
+  const [hoursPart, minutesPart] = timeValue.split(":");
+  const hours = Number.parseInt(hoursPart, 10);
+  const minutes = Number.parseInt(minutesPart, 10);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return hours * 60 + minutes;
+};
+
+const withScheduledAtForReminderGroup = (group: Reminder[]) => {
+  if (group.length === 0 || group.every((reminder) => reminder.scheduledAt)) {
+    return group;
+  }
+
+  const anchorDate = new Date();
+  let dayOffset = 0;
+  let previousMinutes: number | null = null;
+
+  return group.map((reminder) => {
+    const reminderMinutes = parseTimeToMinutes(reminder.time);
+    if (reminderMinutes === null) return reminder;
+
+    if (previousMinutes !== null && reminderMinutes < previousMinutes) {
+      dayOffset += 1;
+    }
+    previousMinutes = reminderMinutes;
+
+    if (reminder.scheduledAt) return reminder;
+
+    const scheduledDate = new Date(anchorDate);
+    scheduledDate.setDate(anchorDate.getDate() + dayOffset);
+    scheduledDate.setHours(
+      Math.floor(reminderMinutes / 60),
+      reminderMinutes % 60,
+      0,
+      0,
+    );
+
+    return {
+      ...reminder,
+      scheduledAt: scheduledDate.toISOString(),
+    };
+  });
+};
+
+const isStoredReminder = (value: unknown): value is Reminder => {
+  if (!value || typeof value !== "object") return false;
+  const reminder = value as Record<string, unknown>;
+  return (
+    typeof reminder.id === "string" &&
+    typeof reminder.medId === "string" &&
+    typeof reminder.time === "string" &&
+    Array.isArray(reminder.days) &&
+    reminder.days.every((day) => typeof day === "string") &&
+    typeof reminder.enabled === "boolean" &&
+    (typeof reminder.lastTaken === "undefined" || typeof reminder.lastTaken === "string") &&
+    (typeof reminder.scheduledAt === "undefined" || typeof reminder.scheduledAt === "string")
+  );
+};
+
+const loadStoredReminders = (): Reminder[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(HARMONIMED_REMINDERS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isStoredReminder);
+  } catch {
+    return [];
+  }
+};
+
+const saveStoredReminders = (reminders: Reminder[]) => {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(HARMONIMED_REMINDERS_KEY, JSON.stringify(reminders));
+  } catch {
+    // Ignore persistence errors in demo mode.
+  }
+};
+
 const formatDoseFrequency = (dosesPerDay: number) => {
   if (dosesPerDay <= 1) return "Once daily";
   if (dosesPerDay === 2) return "Twice daily";
@@ -49,6 +133,35 @@ const formatDoseFrequency = (dosesPerDay: number) => {
 
 const toTimeValue = (date: Date) =>
   `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+
+const weekdayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const isReminderDueNow = (reminder: Reminder, now: Date) => {
+  if (reminder.scheduledAt) {
+    const scheduledAtDate = new Date(reminder.scheduledAt);
+    if (!Number.isNaN(scheduledAtDate.getTime())) {
+      return now.getTime() >= scheduledAtDate.getTime();
+    }
+  }
+
+  const [hoursPart, minutesPart] = reminder.time.split(":");
+  const hours = Number.parseInt(hoursPart, 10);
+  const minutes = Number.parseInt(minutesPart, 10);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return false;
+
+  const currentDay = weekdayLabels[now.getDay()];
+  if (reminder.days.length > 0 && !reminder.days.includes(currentDay)) {
+    return false;
+  }
+
+  const reminderMinutes = hours * 60 + minutes;
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  return currentMinutes >= reminderMinutes;
+};
+
+const formatTakenLabel = (date: Date) =>
+  `Today, ${date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
 
 const getDosesPerDay = (med: Medication) => {
   if (typeof med.dosesPerDay === "number" && med.dosesPerDay >= 1) {
@@ -76,7 +189,7 @@ const buildAutoRemindersFromFirstDose = (
   medId: string,
   dosesPerDay: number,
   firstTakenAt: Date,
-  firstTakenLabel: string,
+  firstTakenLabel?: string,
 ): Reminder[] => {
   const intervalMinutes = Math.round((24 * 60) / dosesPerDay);
 
@@ -89,6 +202,7 @@ const buildAutoRemindersFromFirstDose = (
       days: [...allDays],
       enabled: true,
       lastTaken: index === 0 ? firstTakenLabel : undefined,
+      scheduledAt: reminderTime.toISOString(),
     };
   });
 };
@@ -105,7 +219,10 @@ const MedicationList = () => {
     const stored = loadStoredMedications();
     return stored.length > 0 ? stored : sampleMeds;
   });
-  const [reminders, setReminders] = useState<Reminder[]>(sampleReminders);
+  const [reminders, setReminders] = useState<Reminder[]>(() => {
+    const stored = loadStoredReminders();
+    return stored.length > 0 ? stored : sampleReminders;
+  });
   const [selectedMed, setSelectedMed] = useState<Medication | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [newMed, setNewMed] = useState({ name: "", dose: "", dosesPerDay: "1" });
@@ -117,7 +234,11 @@ const MedicationList = () => {
   const [scannerError, setScannerError] = useState("");
   const [isScannerLoading, setIsScannerLoading] = useState(false);
   const [scannedBarcode, setScannedBarcode] = useState("");
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const [showReminders, setShowReminders] = useState<string | null>(null); // medId
+  const [undoSnapshotsByMedId, setUndoSnapshotsByMedId] = useState<Record<string, Reminder[]>>({});
+  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
+  const [editedFirstDoseTime, setEditedFirstDoseTime] = useState("08:00");
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -181,6 +302,53 @@ const MedicationList = () => {
   useEffect(() => {
     saveStoredMedications(medications);
   }, [medications]);
+
+  useEffect(() => {
+    saveStoredReminders(reminders);
+  }, [reminders]);
+
+  useEffect(() => {
+    setReminders((prev) => {
+      const medicationIds = new Set(medications.map((med) => med.id));
+      const existingForCurrentMeds = prev.filter((reminder) => medicationIds.has(reminder.medId));
+      const normalizedExisting = medications.flatMap((med) =>
+        withScheduledAtForReminderGroup(
+          existingForCurrentMeds.filter((reminder) => reminder.medId === med.id),
+        ),
+      );
+      const missingMedications = medications.filter(
+        (med) => !normalizedExisting.some((reminder) => reminder.medId === med.id),
+      );
+      const needsNormalization = normalizedExisting.some(
+        (reminder, index) => reminder !== existingForCurrentMeds[index],
+      );
+      const removedOrphanReminders = existingForCurrentMeds.length !== prev.length;
+
+      if (missingMedications.length === 0 && !needsNormalization && !removedOrphanReminders) {
+        return prev;
+      }
+
+      const now = new Date();
+      const backfilled = missingMedications.flatMap((med, index) => {
+        const startAt = new Date(now.getTime() + index * 60_000);
+        return buildAutoRemindersFromFirstDose(
+          med.id,
+          Math.max(1, getDosesPerDay(med)),
+          startAt,
+        );
+      });
+
+      return [...normalizedExisting, ...backfilled];
+    });
+  }, [medications]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60_000);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   const stopScanner = useCallback(() => {
     if (scanFrameRef.current !== null) {
@@ -314,7 +482,6 @@ const MedicationList = () => {
     if (!doseValue) return;
     const medId = Date.now().toString();
     const now = new Date();
-    const firstReminderTime = toTimeValue(now);
 
     setMedications([
       ...medications,
@@ -327,16 +494,12 @@ const MedicationList = () => {
         dosesPerDay: parsedDosesPerDay,
       },
     ]);
-    setReminders((prev) => [
-      ...prev,
-      {
-        id: `${medId}-first`,
-        medId,
-        time: firstReminderTime,
-        days: [...allDays],
-        enabled: true,
-      },
-    ]);
+    const generatedReminders = buildAutoRemindersFromFirstDose(
+      medId,
+      parsedDosesPerDay,
+      now,
+    );
+    setReminders((prev) => [...prev, ...generatedReminders]);
     setNewMed({ name: "", dose: "", dosesPerDay: "1" });
     setScannedBarcode("");
     setScannerError("");
@@ -348,6 +511,13 @@ const MedicationList = () => {
   const removeMedication = (id: string) => {
     setMedications(medications.filter((m) => m.id !== id));
     setReminders(reminders.filter((r) => r.medId !== id));
+    setUndoSnapshotsByMedId((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setEditingReminderId(null);
   };
 
   const getMedReminders = (medId: string) => reminders.filter((r) => r.medId === medId);
@@ -356,15 +526,82 @@ const MedicationList = () => {
     setReminders(reminders.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
   };
 
+  const toggleReminderEditor = (reminder: Reminder) => {
+    if (editingReminderId === reminder.id) {
+      setEditingReminderId(null);
+      return;
+    }
+
+    setEditingReminderId(reminder.id);
+    setEditedFirstDoseTime(reminder.time);
+  };
+
+  const applyFirstDoseTime = (medId: string, timeValue: string) => {
+    const medication = medications.find((med) => med.id === medId);
+    if (!medication) return;
+
+    const [hoursPart, minutesPart] = timeValue.split(":");
+    const hours = Number.parseInt(hoursPart, 10);
+    const minutes = Number.parseInt(minutesPart, 10);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return;
+
+    const firstTakenAt = new Date();
+    firstTakenAt.setHours(hours, minutes, 0, 0);
+    const firstTakenLabel = formatTakenLabel(firstTakenAt);
+    const dosesPerDay = Math.max(1, getDosesPerDay(medication));
+    const generatedReminders = buildAutoRemindersFromFirstDose(
+      medId,
+      dosesPerDay,
+      firstTakenAt,
+      firstTakenLabel,
+    );
+
+    setUndoSnapshotsByMedId((prev) => ({
+      ...prev,
+      [medId]: reminders.filter((reminder) => reminder.medId === medId),
+    }));
+
+    setReminders((prev) => [
+      ...prev.filter((reminder) => reminder.medId !== medId),
+      ...generatedReminders,
+    ]);
+    setEditingReminderId(null);
+    setCurrentTime(new Date());
+  };
+
+  const undoTaken = (medId: string) => {
+    const snapshot = undoSnapshotsByMedId[medId];
+    if (!snapshot) return;
+
+    setReminders((prev) => [
+      ...prev.filter((reminder) => reminder.medId !== medId),
+      ...snapshot,
+    ]);
+
+    setUndoSnapshotsByMedId((prev) => {
+      const next = { ...prev };
+      delete next[medId];
+      return next;
+    });
+    setEditingReminderId(null);
+  };
+
   const markTaken = (id: string) => {
     const firstTakenAt = new Date();
-    const firstTakenLabel = `Today, ${firstTakenAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+    const firstTakenLabel = formatTakenLabel(firstTakenAt);
+    const targetReminder = reminders.find((reminder) => reminder.id === id);
+    if (!targetReminder) return;
+
+    setUndoSnapshotsByMedId((prev) => ({
+      ...prev,
+      [targetReminder.medId]: reminders.filter((reminder) => reminder.medId === targetReminder.medId),
+    }));
 
     setReminders((prev) => {
-      const targetReminder = prev.find((r) => r.id === id);
-      if (!targetReminder) return prev;
+      const selectedReminder = prev.find((r) => r.id === id);
+      if (!selectedReminder) return prev;
 
-      const medication = medications.find((med) => med.id === targetReminder.medId);
+      const medication = medications.find((med) => med.id === selectedReminder.medId);
       if (!medication) {
         return prev.map((r) =>
           r.id === id ? { ...r, lastTaken: firstTakenLabel, time: toTimeValue(firstTakenAt) } : r
@@ -379,21 +616,19 @@ const MedicationList = () => {
       }
 
       const generatedReminders = buildAutoRemindersFromFirstDose(
-        targetReminder.medId,
+        selectedReminder.medId,
         dosesPerDay,
         firstTakenAt,
         firstTakenLabel,
       );
 
       return [
-        ...prev.filter((r) => r.medId !== targetReminder.medId),
+        ...prev.filter((r) => r.medId !== selectedReminder.medId),
         ...generatedReminders,
       ];
     });
-  };
-
-  const removeReminder = (id: string) => {
-    setReminders(reminders.filter((r) => r.id !== id));
+    setCurrentTime(new Date());
+    setEditingReminderId(null);
   };
 
   return (
@@ -530,7 +765,7 @@ const MedicationList = () => {
               <div className="relative flex-1">
                 <input
                   type="number"
-                  placeholder="Dose (e.g. 500)"
+                  placeholder="Dose"
                   value={newMed.dose}
                   onChange={(e) => setNewMed({ ...newMed, dose: e.target.value })}
                   className="w-full rounded-lg border bg-background px-3 py-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-primary"
@@ -546,7 +781,7 @@ const MedicationList = () => {
                   placeholder="1"
                   value={newMed.dosesPerDay}
                   onChange={(e) => setNewMed({ ...newMed, dosesPerDay: e.target.value })}
-                  className="w-full rounded-lg border bg-background px-3 py-2.5 pr-16 text-sm outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full rounded-lg border bg-background px-3 py-2.5 pr-20 text-sm outline-none focus:ring-2 focus:ring-primary"
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">times/day</span>
               </div>
@@ -618,54 +853,105 @@ const MedicationList = () => {
 
                   {isReminderExpanded && (
                     <div className="mt-2 flex flex-col gap-2 animate-fade-in">
-                      {medReminders.map((reminder) => (
-                        <div
-                          key={reminder.id}
-                          className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs transition-all ${
-                            reminder.enabled ? "bg-background" : "bg-muted/50 opacity-60"
-                          }`}
-                        >
-                          <button onClick={() => toggleReminder(reminder.id)} className="shrink-0">
-                            {reminder.enabled ? (
-                              <Bell className="h-4 w-4 text-primary" />
-                            ) : (
-                              <BellOff className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </button>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                              <span className="font-medium">{reminder.time}</span>
-                              <span className="text-muted-foreground">
-                                {reminder.days.length === 7 ? "Every day" : reminder.days.join(", ")}
-                              </span>
-                            </div>
-                            {reminder.lastTaken && (
-                              <p className="mt-0.5 text-[10px] text-success font-medium flex items-center gap-1">
-                                <Check className="h-2.5 w-2.5" /> Taken: {reminder.lastTaken}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {reminder.enabled && !reminder.lastTaken && (
-                              <button
-                                onClick={() => markTaken(reminder.id)}
-                                className="rounded-md bg-success/10 px-2 py-1 text-[10px] font-bold text-success hover:bg-success/20 transition-colors"
-                              >
-                                Take
-                              </button>
-                            )}
-                            <button
-                              onClick={() => removeReminder(reminder.id)}
-                              className="p-0.5 text-muted-foreground hover:text-danger transition-colors"
+                      {medReminders.map((reminder, index) => {
+                        const isEditingReminder = editingReminderId === reminder.id;
+                        const hasUndoSnapshot = Boolean(undoSnapshotsByMedId[med.id]?.length);
+                        const showUndo = reminder.enabled && index === 0 && hasUndoSnapshot;
+                        const showTake = reminder.enabled
+                          && !showUndo
+                          && (index === 0 || (!reminder.lastTaken && isReminderDueNow(reminder, currentTime)));
+
+                        return (
+                          <div key={reminder.id}>
+                            <div
+                              onClick={() => toggleReminderEditor(reminder)}
+                              className={`flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-xs transition-all ${
+                                reminder.enabled ? "bg-background hover:bg-muted/20" : "bg-muted/50 opacity-60"
+                              }`}
                             >
-                              <X className="h-3 w-3" />
-                            </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleReminder(reminder.id);
+                                }}
+                                className="shrink-0"
+                              >
+                                {reminder.enabled ? (
+                                  <Bell className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <BellOff className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="h-3 w-3 text-muted-foreground" />
+                                  <span className="font-medium">{reminder.time}</span>
+                                  <span className="text-muted-foreground">
+                                    {reminder.days.length === 7 ? "Every day" : reminder.days.join(", ")}
+                                  </span>
+                                </div>
+                                {reminder.lastTaken && (
+                                  <p className="mt-0.5 text-[10px] text-success font-medium flex items-center gap-1">
+                                    <Check className="h-2.5 w-2.5" /> Taken: {reminder.lastTaken}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {showUndo && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      undoTaken(med.id);
+                                    }}
+                                    className="rounded-md bg-warning/10 px-2 py-1 text-[10px] font-bold text-warning hover:bg-warning/20 transition-colors"
+                                  >
+                                    Undo
+                                  </button>
+                                )}
+                                {showTake && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      markTaken(reminder.id);
+                                    }}
+                                    className="rounded-md bg-success/10 px-2 py-1 text-[10px] font-bold text-success hover:bg-success/20 transition-colors"
+                                  >
+                                    Take
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {isEditingReminder && (
+                              <div className="mt-1 rounded-xl border border-dashed bg-muted/20 p-2.5">
+                                <p className="text-[10px] text-muted-foreground">
+                                  Already took a dose before adding this medication? Set the time below as the first dose.
+                                </p>
+                                <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+                                  <input
+                                    type="time"
+                                    value={editedFirstDoseTime}
+                                    onChange={(e) => setEditedFirstDoseTime(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="w-full rounded-md border bg-background px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-primary sm:w-auto"
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      applyFirstDoseTime(med.id, editedFirstDoseTime);
+                                    }}
+                                    className="rounded-md bg-primary/10 px-2.5 py-1.5 text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors"
+                                  >
+                                    Set as First Dose
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                       <p className="rounded-xl border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground">
-                        Tap <span className="font-semibold text-foreground">Take</span> on the first dose and we automatically calculate the rest of today&apos;s reminders based on your times/day.
+                        Tap a reminder to customize first-dose time. After tapping <span className="font-semibold text-foreground">Take</span>, you can use <span className="font-semibold text-foreground">Undo</span> if it was accidental.
                       </p>
                     </div>
                   )}
