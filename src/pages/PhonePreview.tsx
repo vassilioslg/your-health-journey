@@ -3,25 +3,14 @@ const PhonePreview = () => {
     <main className="min-h-screen overflow-x-hidden bg-slate-950 px-6 py-10 text-slate-100">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center lg:gap-16">
         <section className="max-w-md space-y-4 text-center lg:pt-24 lg:text-left">
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-sky-300/80">Phone Preview</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-sky-300/80">HARMONIMED</p>
           <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
             Ensuring your medications work in <span className="text-gradient">harmony</span>
           </h1>
           <p className="text-base leading-7 text-slate-300 sm:text-lg">
-            This view mirrors the live homepage, so any landing-page changes show up here automatically. It is great for
-            checking spacing, typography, and screenshot-friendly compositions.
+            HarmoniMed brings all your medication information into one place-helping you understand interactions, track side effects, and get simple, personalised safety guidance every day.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-slate-300 lg:justify-start">
-            <a
-              href="/"
-              className="rounded-full border border-white/15 bg-white/10 px-4 py-2 font-semibold transition hover:bg-white/15"
-            >
-              Open full page
-            </a>
-            <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-4 py-2 font-medium text-sky-100">
-              iPhone 14 Pro proportions
-            </span>
-          </div>
+          
         </section>
 
         <section className="relative">
