@@ -681,7 +681,7 @@ const SymptomLogger = () => {
     const normalizedInput = normalizeText(rawInput);
     const inputTokens = tokenize(rawInput);
     const currentMedicationNames = getStoredMedicationNames();
-    const hasMedicationContext = currentMedicationNames.length > 0;
+    if (currentMedicationNames.length === 0) return;
 
     const severityOrder = { high: 0, moderate: 1, low: 2 };
     const severityWeight = { high: 3, moderate: 2, low: 1 };
@@ -730,24 +730,14 @@ const SymptomLogger = () => {
       });
     });
 
-    let matches: ScoredSideEffectEntry[] = [];
-    if (hasMedicationContext) {
-      const directMedicationMatches = candidateMatches.filter(
-        (match) => match.matchedUserMeds.length > 0,
-      );
-      const source = directMedicationMatches.length > 0 ? directMedicationMatches : candidateMatches;
-      matches = source
-        .sort(
-          (a, b) =>
-            b.relevanceScore - a.relevanceScore ||
-            severityOrder[a.severity] - severityOrder[b.severity],
-        )
-        .slice(0, 6);
-    } else {
-      matches = candidateMatches
-        .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
-        .slice(0, 6);
-    }
+    const matches = candidateMatches
+      .filter((match) => match.matchedUserMeds.length > 0)
+      .sort(
+        (a, b) =>
+          b.relevanceScore - a.relevanceScore ||
+          severityOrder[a.severity] - severityOrder[b.severity],
+      )
+      .slice(0, 6);
 
     // Filter interaction alerts so they only show when the user's active meds support the combo.
     const matchedInteractions: InteractionAlertEntry[] = [];
@@ -757,11 +747,9 @@ const SymptomLogger = () => {
         containsTerm(normalizedInput, normalizeText(ia.symptom)) ||
         phraseMatchesInput(inputTokens, ia.symptom)
       ) {
-        const hasInteractionContext =
-          !hasMedicationContext ||
-          ia.drugs.every((drug) =>
-            currentMedicationNames.some((userDrug) => medicationNamesMatch(userDrug, drug)),
-          );
+        const hasInteractionContext = ia.drugs.every((drug) =>
+          currentMedicationNames.some((userDrug) => medicationNamesMatch(userDrug, drug)),
+        );
         if (!hasInteractionContext) return;
 
         const alreadyAdded = matchedInteractions.some(
@@ -785,55 +773,31 @@ const SymptomLogger = () => {
             (kw) => containsTerm(normalizedInput, normalizeText(kw)) || phraseMatchesInput(inputTokens, kw),
           )
         ) {
-          const relatedMedCategories = hasMedicationContext
-            ? reasoning.relatedMedCategories
-                .map((category) => {
-                  const matchedMeds = category.meds.filter((med) =>
-                    currentMedicationNames.some((userMed) => medicationNamesMatch(userMed, med)),
-                  );
-                  return { ...category, meds: matchedMeds };
-                })
-                .filter((category) => category.meds.length > 0)
-            : reasoning.relatedMedCategories;
+          const relatedMedCategories = reasoning.relatedMedCategories
+            .map((category) => {
+              const matchedMeds = category.meds.filter((med) =>
+                currentMedicationNames.some((userMed) => medicationNamesMatch(userMed, med)),
+              );
+              return { ...category, meds: matchedMeds };
+            })
+            .filter((category) => category.meds.length > 0);
 
-          intelligentInsight = {
-            reasoning:
-              hasMedicationContext && relatedMedCategories.length === 0
-                ? `${reasoning.reasoning} We did not find a strong overlap with your current medication list, so this may be caused by a non-medication factor.`
-                : reasoning.reasoning,
-            relatedMedCategories,
-            generalAdvice:
-              hasMedicationContext && relatedMedCategories.length === 0
-                ? `${reasoning.generalAdvice} If this keeps happening, discuss it with your clinician as it may relate to condition changes rather than medicine side effects.`
-                : reasoning.generalAdvice,
-          };
+          if (relatedMedCategories.length > 0) {
+            intelligentInsight = {
+              reasoning: reasoning.reasoning,
+              relatedMedCategories,
+              generalAdvice: reasoning.generalAdvice,
+            };
+          }
           break;
         }
-      }
-      // Fallback: provide general context-based reasoning
-      if (!intelligentInsight) {
-        intelligentInsight = {
-          reasoning: `"${input.trim()}" isn't in our standard side-effects database, but that doesn't mean it's unrelated to your medications. Many drugs can cause unexpected symptoms through indirect effects on your body.`,
-          relatedMedCategories: [
-            { category: "General medication effects", meds: [], explanation: "Any medication can cause individual reactions not listed in common side effects. Your body chemistry is unique." },
-            { category: "Drug interactions", meds: [], explanation: "Combinations of medications can produce symptoms that neither drug would cause alone." },
-            { category: "Timing & lifestyle factors", meds: [], explanation: "Symptoms may relate to when you take medications, food interactions, hydration levels, or sleep patterns." },
-          ],
-          generalAdvice: hasMedicationContext
-            ? "Keep a note of when this symptom occurs (time of day, relation to doses, food intake). Share this log with your doctor or pharmacist — they can determine if it's medication-related."
-            : "Keep a note of when this symptom occurs and add your medications in the Meds tab for more personalized symptom matching next time.",
-        };
       }
     }
 
     const contextPieces: string[] = [];
-    if (hasMedicationContext) {
-      const medsPreview = currentMedicationNames.slice(0, 3).join(", ");
-      const overflow = currentMedicationNames.length > 3 ? ` +${currentMedicationNames.length - 3} more` : "";
-      contextPieces.push(`Using your meds: ${medsPreview}${overflow}`);
-    } else {
-      contextPieces.push("No medication list found yet");
-    }
+    const medsPreview = currentMedicationNames.slice(0, 3).join(", ");
+    const overflow = currentMedicationNames.length > 3 ? ` +${currentMedicationNames.length - 3} more` : "";
+    contextPieces.push(`Using your meds: ${medsPreview}${overflow}`);
     if (profile.conditions.length > 0) {
       const conditionPreview = profile.conditions.slice(0, 2).join(", ");
       const overflow = profile.conditions.length > 2 ? ` +${profile.conditions.length - 2} more` : "";
@@ -878,7 +842,7 @@ const SymptomLogger = () => {
         </p>
         {!hasMedicationList && (
           <p className="mt-1 text-xs text-warning">
-            Add your medicines in the Meds tab to get context-specific symptom matches.
+            Please add medications.
           </p>
         )}
       </div>
@@ -892,14 +856,15 @@ const SymptomLogger = () => {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="e.g. I'm feeling dizzy and nauseous..."
+            placeholder={hasMedicationList ? "e.g. I'm feeling dizzy and nauseous..." : "Please add medications first"}
             value={input}
             maxLength={200}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && analyzeSymptom()}
+            disabled={!hasMedicationList}
             className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
           />
-          <Button variant="hero" size="default" onClick={analyzeSymptom} disabled={!input.trim()}>
+          <Button variant="hero" size="default" onClick={analyzeSymptom} disabled={!hasMedicationList || !input.trim()}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
@@ -909,6 +874,7 @@ const SymptomLogger = () => {
             <button
               key={s}
               onClick={() => setInput(s)}
+              disabled={!hasMedicationList}
               className="rounded-full border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
             >
               {s}
